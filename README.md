@@ -101,7 +101,7 @@ rackrank export --blanks 1 --front rack
 ```
 
 Run `rackrank list --help` and `rackrank export --help` for every option
-(`--config`, `--dict`, `--slice-size`, `--cloze-threshold`, `--cloze-mode`,
+(`--config`, `--dict`, `--slice-size`, `--cloze-threshold`,
 `-o/--output-dir`).
 
 ## Anki output
@@ -121,10 +121,8 @@ different note types, each export writes two files, `…-basic.txt` and
 | tag | rank slice, e.g. `csw24::7::b0::0001-0500` (`--slice-size`, default 500) |
 
 The front of each card shows the letters in capitals followed by the count, for
-example `AEGIRST (8)`. In cloze notes, `--cloze-mode each` (the default) hides
-one anagram per deletion, so a note yields one card per anagram, as in the
-legacy deck; `--cloze-mode all` hides everything behind a single deletion, so
-the rack has just one card.
+example `AEGIRST (8)`. In cloze notes each anagram is hidden behind its own
+deletion, so a note yields one card per anagram, as in the legacy deck.
 
 ### Importing
 

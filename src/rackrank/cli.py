@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from .config import load_config
-from .export.common import CLOZE_ALL, CLOZE_EACH, CLOZE_THRESHOLD
+from .export.common import CLOZE_THRESHOLD
 from .lexicon import load_lexicon
 from .probability import RACK_SIZE, total_racks
 from .ranking import (
@@ -119,11 +119,11 @@ def _export(args: argparse.Namespace) -> int:
 
     written: list[Path] = []
     if args.format in ("tsv", "both"):
-        written += write_tsv(cards, spec, stem, args.slice_size, args.cloze_threshold, args.cloze_mode)
+        written += write_tsv(cards, spec, stem, args.slice_size, args.cloze_threshold)
     if args.format in ("apkg", "both"):
         from .export.apkg import write_apkg
 
-        written.append(write_apkg(cards, spec, stem, args.slice_size, args.cloze_threshold, args.cloze_mode))
+        written.append(write_apkg(cards, spec, stem, args.slice_size, args.cloze_threshold))
     for path in written:
         print(path)
     print(f"{len(cards)} cards exported")
@@ -146,11 +146,6 @@ def main(argv: list[str] | None = None) -> int:
     export_parser.add_argument(
         "--cloze-threshold", type=int, default=CLOZE_THRESHOLD,
         help=f"racks with more anagrams than this become cloze notes (default {CLOZE_THRESHOLD})",
-    )  # fmt: skip
-    export_parser.add_argument(
-        "--cloze-mode", choices=[CLOZE_EACH, CLOZE_ALL], default=CLOZE_EACH,
-        help="'each': one deletion per anagram, so one card per anagram (default); "
-        "'all': hide every anagram at once, so a single card per rack",
     )  # fmt: skip
     export_parser.add_argument(
         "--fetch-definitions", action="store_true",

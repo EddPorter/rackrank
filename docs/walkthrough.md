@@ -115,8 +115,7 @@ the subcommand (`rackrank export --rank 1-50`) because they belong to it.
 
 - `common.py` turns a `Card` into note fields. Racks with four or fewer
   anagrams become **Basic** notes; larger ones become **Cloze** notes, where each
-  anagram is hidden behind `{{c1::...}}` so Anki makes one card per anagram
-  (`--cloze-mode each`), or all behind one deletion (`all`). Words are
+  anagram is hidden behind `{{c1::...}}` so Anki makes one card per anagram. Words are
   HTML-escaped; hooks are rendered as `bfry-` and `-s`.
 - `tsv.py` writes tab-separated files with Anki's `#notetype`, `#deck` and tag
   headers. The alphagram is always the first field, which Anki uses as the

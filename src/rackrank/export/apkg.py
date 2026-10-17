@@ -8,7 +8,6 @@ from pathlib import Path
 from ..ranking import Card, ListSpec
 from .common import (
     BASIC_FIELDS,
-    CLOZE_EACH,
     CLOZE_FIELDS,
     CLOZE_THRESHOLD,
     basic_fields,
@@ -37,7 +36,6 @@ def write_apkg(
     stem: Path,
     slice_size: int,
     cloze_threshold: int = CLOZE_THRESHOLD,
-    cloze_mode: str = CLOZE_EACH,
 ) -> Path:
     try:
         import genanki
@@ -74,7 +72,7 @@ def write_apkg(
         deck.add_note(
             genanki.Note(
                 model=cloze_model if clozed else basic_model,
-                fields=cloze_fields(card, cloze_mode) if clozed else basic_fields(card),
+                fields=cloze_fields(card) if clozed else basic_fields(card),
                 tags=[spec.slice_tag(card.rank, slice_size)],
                 guid=genanki.guid_for(
                     cloze_name if clozed else basic_name, card.front

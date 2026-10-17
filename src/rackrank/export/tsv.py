@@ -11,7 +11,6 @@ from pathlib import Path
 
 from ..ranking import Card, ListSpec
 from .common import (
-    CLOZE_EACH,
     CLOZE_THRESHOLD,
     basic_fields,
     basic_note_type,
@@ -38,14 +37,13 @@ def write_tsv(
     stem: Path,
     slice_size: int,
     cloze_threshold: int = CLOZE_THRESHOLD,
-    cloze_mode: str = CLOZE_EACH,
 ) -> list[Path]:
     """Write ``<stem>-basic.txt`` and ``<stem>-cloze.txt``; skip empty ones."""
     basic_rows, cloze_rows = [], []
     for card in cards:
         tag = spec.slice_tag(card.rank, slice_size)
         if is_cloze(card, cloze_threshold):
-            cloze_rows.append([*cloze_fields(card, cloze_mode), tag])
+            cloze_rows.append([*cloze_fields(card), tag])
         else:
             basic_rows.append([*basic_fields(card), tag])
 

@@ -1,6 +1,6 @@
 import pytest
 
-from rackrank.export.common import CLOZE_ALL, basic_fields, cloze_fields
+from rackrank.export.common import basic_fields, cloze_fields
 from rackrank.export.tsv import write_tsv
 from rackrank.probability import STANDARD_TILES
 from rackrank.ranking import ListSpec, build_cards
@@ -32,12 +32,6 @@ def test_cloze_each_numbers_every_anagram(cards):
     card = next(c for c in cards if c.front == "AEINRST")
     text = cloze_fields(card)[2]
     assert all("{{c%d::" % n in text for n in range(1, 6))
-
-
-def test_cloze_all_uses_a_single_deletion(cards):
-    card = next(c for c in cards if c.front == "AEINRST")
-    text = cloze_fields(card, CLOZE_ALL)[2]
-    assert text.count("{{c1::") == 5 and "{{c2::" not in text
 
 
 def test_tsv_writes_two_files_split_on_the_threshold(cards, spec, tmp_path):

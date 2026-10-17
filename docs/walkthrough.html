@@ -282,10 +282,6 @@ footer { margin-top: 4rem; color: var(--muted); font-size: 0.9rem; }
       <label class="eyebrow" for="thr">Cloze cut-off</label>
       <input type="range" id="thr" min="1" max="6" value="4">
       <span class="out" id="thrOut"></span>
-      <span class="eyebrow" style="margin-left:0.6rem">Cloze mode</span>
-      <div class="seg" id="clMode" role="group" aria-label="Cloze mode">
-        <button aria-pressed="true" data-m="each">each</button><button aria-pressed="false" data-m="all">all</button>
-      </div>
     </div>
     <div class="cardprev" id="cardPrev"></div>
     <p class="note" id="cardNote" style="margin:0.9rem 0 0"></p>
@@ -547,27 +543,24 @@ const SAMPLE = [
 
 /* ---------- 4: card preview ---------- */
 (function cards() {
-  const host = $("#cardPrev"), thr = $("#thr"), thrOut = $("#thrOut"), seg = $("#clMode"), note = $("#cardNote");
+  const host = $("#cardPrev"), thr = $("#thr"), thrOut = $("#thrOut"), note = $("#cardNote");
   const words = SAMPLE[0][1].slice().sort();
-  let mode = "each";
   function render() {
     const t = +thr.value, isCloze = words.length > t;
     thrOut.textContent = `${t} → ${words.length} anagrams make a ${isCloze ? "Cloze" : "Basic"} note`;
-    seg.style.display = isCloze ? "" : "none";
     let h = `<div class="front">AEINRST <small>(${words.length})</small></div><div style="margin:0.6rem 0 0.8rem"><span class="tag ${isCloze ? "cl" : "basic"}">${isCloze ? "Cloze" : "Basic"}</span> <span class="tag">csw24::7::b0::0001-0500</span></div>`;
     words.forEach((w, i) => {
       const [def, back] = WORDS[w];
       const inner = `<span class="w">${w}</span> ${back ? `<span class="hook">-${back}</span>` : ""} <span class="def">${def}</span>`;
       if (isCloze) {
-        const n = mode === "each" ? i + 1 : 1;
-        h += `<div class="ana"><button class="cloze" data-i="${i}" aria-label="Reveal anagram ${i + 1}">[… c${n}]</button><span class="inner" hidden>${inner}</span></div>`;
+        h += `<div class="ana"><button class="cloze" data-i="${i}" aria-label="Reveal anagram ${i + 1}">[… c${i + 1}]</button><span class="inner" hidden>${inner}</span></div>`;
       } else {
         h += `<div class="ana">${inner}</div>`;
       }
     });
     host.innerHTML = h;
     note.innerHTML = isCloze
-      ? `Anki field: <code>{{c${mode === "each" ? "1…" + words.length : "1"}::…}}</code>. Mode <b>${mode}</b> gives <b>${mode === "each" ? words.length + " cards" : "1 card"}</b> for this rack.`
+      ? `Anki field: <code>{{c1::…}}</code> to <code>{{c${words.length}::…}}</code>. Each deletion is its own card, so this rack gives <b>${words.length} cards</b>.`
       : `A Basic note gives <b>1 card</b>: the letters on the front, every anagram on the back.`;
   }
   host.addEventListener("click", e => {
@@ -576,12 +569,6 @@ const SAMPLE = [
     row.innerHTML = row.querySelector(".inner").innerHTML;
   });
   thr.addEventListener("input", render);
-  seg.addEventListener("click", e => {
-    const b = e.target.closest("button"); if (!b) return;
-    mode = b.dataset.m;
-    seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
-    render();
-  });
   render();
 })();
 
@@ -645,7 +632,7 @@ for letter, needed in Counter(letters).items():
         scored.append((letters, draws, words))
 return _rank(scored, lexicon)`],
     ["config.py", "TOML config and tile set", `config.dictionary_path = (path.parent / dictionary["path"]).resolve()`],
-    ["cli.py", "list and export commands", `rackrank export --rank 1-50 --cloze-mode all --format apkg --fetch-definitions`],
+    ["cli.py", "list and export commands", `rackrank export --rank 1-50 --format apkg --fetch-definitions`],
     ["export/", "Basic and cloze notes, TSV and .apkg", `lines.append("{{c%d::%s}}" % (index, render_entry(entry)))`],
     ["definitions.py", "Lookup, backoff, write-back", `wait = backoff
 for attempt in range(RETRIES + 1):

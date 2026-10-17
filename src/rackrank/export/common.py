@@ -7,8 +7,6 @@ from html import escape
 from ..ranking import Card, Entry, ListSpec
 
 CLOZE_THRESHOLD = 4  # more anagrams than this get a cloze note
-CLOZE_EACH = "each"  # one deletion per anagram: one cloze card per anagram
-CLOZE_ALL = "all"  # one deletion for the lot: a single card
 
 BASIC_FIELDS = ["Alphagram", "Count", "Anagrams", "Rank", "Draws"]
 CLOZE_FIELDS = ["Alphagram", "Count", "Text", "Rank", "Draws"]
@@ -50,11 +48,11 @@ def basic_fields(card: Card) -> list[str]:
     ]
 
 
-def cloze_fields(card: Card, cloze_mode: str = CLOZE_EACH) -> list[str]:
+def cloze_fields(card: Card) -> list[str]:
+    """Cloze note fields: one deletion per anagram, so one card per anagram."""
     lines = []
     for number, entry in enumerate(card.entries, start=1):
-        index = number if cloze_mode == CLOZE_EACH else 1
-        lines.append("{{c%d::%s}}" % (index, render_entry(entry)))
+        lines.append("{{c%d::%s}}" % (number, render_entry(entry)))
     return [
         card.front,
         str(len(card.entries)),
