@@ -1,0 +1,16 @@
+# Dictionaries are Collins-copyrighted: never commit them, nor decks derived from them.
+/dictionaries/*
+!/dictionaries/.gitkeep
+/output/
+*.apkg
+
+# Local configuration (holds your dictionary path)
+/config.toml
+
+# Python
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+build/
+dist/

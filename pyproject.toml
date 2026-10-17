@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rackrank"
+version = "0.1.0"
+description = "Ranked Scrabble bingo study lists and Anki decks"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+apkg = ["genanki>=0.13"]
+dev = ["pytest>=8", "genanki>=0.13"]
+
+[project.scripts]
+rackrank = "rackrank.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
