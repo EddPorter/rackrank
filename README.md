@@ -139,7 +139,7 @@ reason.
 
 For a guided tour of how the code fits together, see
 [docs/walkthrough.md](docs/walkthrough.md), or open
-[docs/walkthrough.html](docs/walkthrough.html) in a browser for an interactive version.
+[docs/index.html](docs/index.html) in a browser for an interactive version.
 
 ## Layout
 
