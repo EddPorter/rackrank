@@ -64,6 +64,9 @@ def _build(args: argparse.Namespace) -> tuple[ListSpec, list[Card], list[Card]]:
     lexicon = load_lexicon(path, config.dictionary_name, config.dictionary_format)
     if lexicon.skipped:
         print(f"Warning: skipped {lexicon.skipped} unreadable dictionary lines", file=sys.stderr)
+    fetch = getattr(args, "fetch_definitions", False)
+    if fetch and config.dictionary_format != "wordlist":
+        raise SystemExit("--fetch-definitions only works with the 'wordlist' format")
 
     try:
         blanks = parse_blanks(args.blanks, config.tiles)
@@ -77,6 +80,15 @@ def _build(args: argparse.Namespace) -> tuple[ListSpec, list[Card], list[Card]]:
     selected = filter_cards(
         ranked, args.rank, args.single_only, args.front_hook, args.back_hook
     )
+    if fetch:
+        from .definitions import fill_definitions
+
+        words = {e.word for card in selected for e in card.entries}
+        if fill_definitions(lexicon, words, path):
+            ranked = build_cards(lexicon, config.tiles, spec)
+            selected = filter_cards(
+                ranked, args.rank, args.single_only, args.front_hook, args.back_hook
+            )
     args.total = total_racks(config.tiles, RACK_SIZE)
     return spec, ranked, selected
 
@@ -139,6 +151,10 @@ def main(argv: list[str] | None = None) -> int:
         "--cloze-mode", choices=[CLOZE_EACH, CLOZE_ALL], default=CLOZE_EACH,
         help="'each': one deletion per anagram, so one card per anagram (default); "
         "'all': hide every anagram at once, so a single card per rack",
+    )  # fmt: skip
+    export_parser.add_argument(
+        "--fetch-definitions", action="store_true",
+        help="look up missing definitions online and save them into the word list",
     )  # fmt: skip
     export_parser.set_defaults(run=_export)
 

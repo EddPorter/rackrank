@@ -40,6 +40,12 @@ so decks, note types and tags are labelled correctly. For a different file
 layout, add a function to `rackrank.lexicon.LOADERS` and select it with
 `format`.
 
+To fill in missing definitions, add `--fetch-definitions` to `export`. Only the
+words in the exported cards are looked up (via the free dictionaryapi.dev, which
+is ordinary English, not Collins, so some Scrabble words won't be found). Found
+definitions are written back into the word list; misses go in
+`<wordlist>.nodef` so they aren't requested again.
+
 Front and back hooks are worked out from the word list itself (a hook is a
 letter that, added to the word, makes another word in the same lexicon).
 
