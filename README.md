@@ -154,3 +154,9 @@ src/rackrank/
   export/          common rendering, templates, tsv.py, apkg.py
 tests/
 ```
+
+## Licence
+
+The code is released under the [MIT licence](LICENSE). The licence covers the
+code only, not the Collins word list or its definitions, which you must obtain
+and use under their own terms.
