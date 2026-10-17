@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rackrank Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: one reading column; each pipeline stage is a live demo above its explanation.
+   Tokens come from the Scrabble set itself: beech tile, premium-square blue and red. */
+:root {
+  --bg: #edf0f3;
+  --panel: #ffffff;
+  --ink: #14202b;
+  --muted: #4d5b69;
+  --line: #cdd5dd;
+  --tile: #e8c46a;
+  --tile-edge: #b98d2a;
+  --tile-ink: #2a2010;
+  --blue: #1b6a99;
+  --blue-soft: #d9ebf6;
+  --red: #b83a27;
+  --red-soft: #f8dfda;
+  --ok: #2f7d4f;
+  --code-bg: #e2e8ee;
+  --font-display: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c131a; --panel: #141f29; --ink: #e5ecf2; --muted: #9eacb9; --line: #29374a;
+    --tile: #dfb85c; --tile-edge: #8f6a1a; --tile-ink: #2a2010;
+    --blue: #62b4e4; --blue-soft: #15303f; --red: #f08a76; --red-soft: #3a1d18; --ok: #6cc590;
+    --code-bg: #1b2835; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c131a; --panel: #141f29; --ink: #e5ecf2; --muted: #9eacb9; --line: #29374a;
+  --tile: #dfb85c; --tile-edge: #8f6a1a; --tile-ink: #2a2010;
+  --blue: #62b4e4; --blue-soft: #15303f; --red: #f08a76; --red-soft: #3a1d18; --ok: #6cc590;
+  --code-bg: #1b2835; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+:root { color-scheme: light; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font-body);
+  padding-block: 0 4rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 860px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2.4rem, 7vw, 4rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.6rem, 4vw, 2.1rem); font-weight: 800; letter-spacing: -0.01em; }
+h3 { font-size: 1.1rem; font-weight: 600; }
+p { margin: 0 0 1em; max-width: 65ch; }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 3px; }
+a { color: var(--blue); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.eyebrow { font: 500 0.78rem/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+/* hero */
+.hero { padding-block: 3rem 2rem; }
+.hero p.lede { font-size: 1.15rem; margin-top: 1.2rem; }
+.rack { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1.6rem 0 1rem; min-height: 4.2rem; }
+.tile {
+  width: 3.4rem; height: 3.4rem; border-radius: 6px; background: var(--tile); color: var(--tile-ink);
+  box-shadow: 0 3px 0 var(--tile-edge), 0 6px 10px rgb(0 0 0 / 0.12);
+  display: grid; place-items: center; position: relative;
+  font: 800 1.9rem/1 var(--font-display);
+}
+.tile sub { position: absolute; right: 0.28rem; bottom: 0.18rem; font: 600 0.62rem/1 var(--font-body); }
+.tile.sm { width: 2.2rem; height: 2.2rem; font-size: 1.2rem; border-radius: 4px; box-shadow: 0 2px 0 var(--tile-edge); }
+.tile.sm sub { font-size: 0.5rem; right: 0.16rem; bottom: 0.1rem; }
+.tile.blank { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--tile-edge); }
+.row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+.btn {
+  background: var(--panel); border: 1.5px solid var(--line); border-radius: 8px; padding: 0.45rem 0.9rem;
+  font-weight: 500; transition: border-color 0.15s, background 0.15s;
+}
+.btn:hover { border-color: var(--blue); }
+.btn.primary { background: var(--blue); border-color: var(--blue); color: var(--bg); font-weight: 600; }
+.btn[aria-pressed="true"], .btn.on { background: var(--blue-soft); border-color: var(--blue); color: var(--ink); }
+.seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: transparent; padding: 0.4rem 0.85rem; font-weight: 500; }
+.seg button + button { border-left: 1.5px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--blue-soft); font-weight: 600; }
+
+/* pipeline strip */
+.pipe { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 2rem 0 0; padding: 0; list-style: none; }
+.pipe a {
+  display: block; text-decoration: none; color: var(--ink); border: 1.5px solid var(--line); background: var(--panel);
+  border-radius: 8px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.92rem;
+}
+.pipe a:hover { border-color: var(--blue); }
+.pipe small { display: block; font: 400 0.74rem/1.3 var(--font-mono); color: var(--muted); }
+
+/* sections */
+section.stage { margin-top: 4.5rem; scroll-margin-top: 1rem; }
+.stage > .head { display: flex; gap: 0.9rem; align-items: baseline; margin-bottom: 0.8rem; flex-wrap: wrap; }
+.stage .file { font: 500 0.82rem var(--font-mono); color: var(--blue); }
+.demo {
+  background: var(--panel); border: 1.5px solid var(--line); border-radius: 12px; padding: 1.2rem;
+  margin: 1.2rem 0; min-width: 0;
+}
+.demo > .label { margin-bottom: 0.9rem; display: block; }
+.out { font: 500 1.05rem var(--font-mono); font-variant-numeric: tabular-nums; }
+.big { font: 800 clamp(1.8rem, 6vw, 2.8rem)/1 var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.muted { color: var(--muted); }
+.note { color: var(--muted); font-size: 0.92rem; }
+.scroll-x { overflow-x: auto; }
+
+/* calculator */
+.letters-in {
+  font: 800 1.6rem var(--font-display); letter-spacing: 0.25em; text-transform: uppercase; width: 12.5rem; max-width: 100%;
+  padding: 0.35rem 0.7rem; border-radius: 8px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink);
+}
+.factors { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 1rem 0; }
+.factor {
+  border: 1.5px solid var(--line); border-radius: 8px; padding: 0.4rem 0.7rem; background: var(--bg);
+  font: 500 0.88rem var(--font-mono); display: flex; align-items: center; gap: 0.55rem;
+}
+.factor b { font: 800 1.1rem var(--font-display); }
+.factor .eq { color: var(--blue); font-weight: 600; }
+.times { color: var(--muted); align-self: center; }
+.bar { height: 10px; background: var(--code-bg); border-radius: 5px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--blue); border-radius: 5px; transition: width 0.4s; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th { text-align: left; font: 500 0.74rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 0.3rem 0.5rem; }
+td { padding: 0.35rem 0.5rem; border-top: 1px solid var(--line); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+tr.total td { font-weight: 600; border-top: 2px solid var(--ink); }
+
+/* ranking race */
+.ranks { position: relative; display: grid; gap: 0.35rem; }
+.rrow {
+  display: grid; grid-template-columns: 2.4rem 9.4rem minmax(0, 1fr) 7rem; gap: 0.7rem; align-items: center;
+  padding: 0.3rem 0.5rem; border-radius: 8px; border: 1.5px solid transparent; transition: opacity 0.25s;
+}
+.rrow.out-of-filter { opacity: 0.28; }
+.rrow .rk { font: 800 1.2rem var(--font-display); text-align: right; font-variant-numeric: tabular-nums; }
+.rrow .ag { display: flex; gap: 2px; }
+.rrow .ag .tile { width: 1.25rem; height: 1.25rem; font-size: 0.78rem; border-radius: 3px; box-shadow: 0 1px 0 var(--tile-edge); }
+.rrow .ag .tile sub { display: none; }
+.rrow .words { font: 400 0.76rem/1.3 var(--font-mono); color: var(--muted); margin-top: 0.15rem; }
+.rrow .dr { font: 500 0.82rem var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .rrow { grid-template-columns: 2rem 8.6rem minmax(0, 1fr); } .rrow .dr { display: none; } }
+
+/* card preview */
+.cardprev { border: 1.5px solid var(--line); border-radius: 12px; background: var(--bg); padding: 1.1rem; }
+.cardprev .front { font: 800 1.9rem var(--font-display); letter-spacing: 0.04em; }
+.cardprev .front small { font: 500 1rem var(--font-body); color: var(--muted); letter-spacing: 0; }
+.ana { display: flex; gap: 0.6rem; align-items: baseline; padding: 0.3rem 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.ana:first-of-type { border-top: 0; }
+.ana .w { font: 800 1.1rem var(--font-display); letter-spacing: 0.03em; }
+.ana .hook { font: 500 0.85rem var(--font-mono); color: var(--blue); }
+.ana .def { color: var(--muted); font-size: 0.88rem; }
+.cloze { cursor: pointer; border: 0; background: var(--blue-soft); color: var(--blue); border-radius: 6px; padding: 0.15rem 0.7rem; font: 600 0.9rem var(--font-mono); }
+.cloze.open { background: transparent; padding: 0; color: inherit; font: 800 1.1rem var(--font-display); cursor: default; }
+.tag { display: inline-block; font: 500 0.76rem var(--font-mono); padding: 0.1rem 0.5rem; border-radius: 4px; background: var(--code-bg); }
+.tag.basic { background: var(--blue-soft); color: var(--blue); }
+.tag.cl { background: var(--red-soft); color: var(--red); }
+input[type="range"] { accent-color: var(--blue); width: min(18rem, 100%); }
+
+/* lookup sim */
+.dots { display: flex; flex-wrap: wrap; gap: 5px; margin: 0.8rem 0; }
+.dot { width: 14px; height: 14px; border-radius: 3px; background: var(--code-bg); border: 1px solid var(--line); }
+.dot.cur { background: var(--blue); border-color: var(--blue); }
+.dot.found { background: var(--ok); border-color: var(--ok); }
+.dot.miss { background: var(--tile); border-color: var(--tile-edge); }
+.dot.skip { background: var(--red); border-color: var(--red); }
+.dot.wait { background: var(--red-soft); border-color: var(--red); animation: pulse 0.9s infinite; }
+@keyframes pulse { 50% { opacity: 0.35; } }
+.log { font: 400 0.82rem/1.5 var(--font-mono); background: var(--bg); border: 1.5px solid var(--line); border-radius: 8px; padding: 0.6rem 0.8rem; height: 9.5rem; overflow-y: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.84rem; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 0.35rem; vertical-align: -1px; background: var(--c); }
+
+/* module map */
+.mods { display: grid; gap: 0.5rem; }
+details.mod { border: 1.5px solid var(--line); border-radius: 10px; background: var(--panel); }
+details.mod summary { cursor: pointer; padding: 0.7rem 1rem; display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap; list-style: none; }
+details.mod summary::-webkit-details-marker { display: none; }
+details.mod summary::before { content: "+"; font: 600 1rem var(--font-mono); color: var(--blue); width: 1rem; }
+details.mod[open] summary::before { content: "−"; }
+details.mod .f { font: 500 0.9rem var(--font-mono); color: var(--blue); }
+details.mod .body { padding: 0 1rem 1rem 2rem; }
+pre { margin: 0.6rem 0 0; padding: 0.8rem 1rem; background: var(--code-bg); border-radius: 8px; overflow-x: auto; font: 400 0.83rem/1.55 var(--font-mono); }
+footer { margin-top: 4rem; color: var(--muted); font-size: 0.9rem; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">rackrank · a tour of the code</div>
+  <h1>Which seven tiles will you actually draw?</h1>
+  <p class="lede">Some racks turn up far more often than others. rackrank counts how many ways the bag can deliver every seven-letter rack, sorts them, and turns the likeliest into flash cards. Every demo below runs the same arithmetic as the Python.</p>
+
+  <div class="rack" id="heroRack" aria-label="Seven tiles"></div>
+  <div class="row" id="heroWords"></div>
+  <div class="row" style="margin-top:0.8rem">
+    <button class="btn" id="shuffleBtn">Shuffle</button>
+    <button class="btn primary" id="sortBtn">Sort into alphagram</button>
+    <span class="out" id="heroOut"></span>
+  </div>
+
+  <ol class="pipe">
+    <li><a href="#s-count">1 · Count draws<small>probability.py</small></a></li>
+    <li><a href="#s-lex">2 · Group words<small>lexicon.py</small></a></li>
+    <li><a href="#s-rank">3 · Rank<small>ranking.py</small></a></li>
+    <li><a href="#s-cards">4 · Make cards<small>export/</small></a></li>
+    <li><a href="#s-defs">5 · Look up definitions<small>definitions.py</small></a></li>
+    <li><a href="#s-map">Code map</a></li>
+  </ol>
+</header>
+
+<!-- 1 -->
+<section class="stage" id="s-count">
+  <div class="head"><h2>Count the ways to draw a rack</h2><span class="file">probability.py</span></div>
+  <p>A <em>draw</em> is one particular set of physical tiles from the bag. The bag holds nine As, so a rack with two As can arise in C(9, 2) = 36 ways. Across a whole rack the ways multiply, and the product is the rack's draw count. Type any seven letters.</p>
+
+  <div class="demo">
+    <div class="row">
+      <label class="eyebrow" for="calcIn">Rack</label>
+      <input class="letters-in" id="calcIn" value="AEINRST" maxlength="7" autocomplete="off" spellcheck="false">
+      <span class="eyebrow" style="margin-left:0.6rem">Blanks</span>
+      <div class="seg" id="calcBlanks" role="group" aria-label="Number of blanks">
+        <button aria-pressed="true" data-k="0">0</button><button aria-pressed="false" data-k="1">1</button><button aria-pressed="false" data-k="2">2</button>
+      </div>
+    </div>
+    <div id="calcBody"></div>
+  </div>
+
+  <p><strong>Blanks.</strong> With one blank, a rack of <span class="mono">AEINRS?</span> can spell AEINRST, but so can <span class="mono">AEINRT?</span>, <span class="mono">AEINST?</span> and others. For each <em>distinct</em> letter a blank could stand for, the leftover concrete tiles are a different rack. Those racks never overlap, so <code>alphagram_draw_count</code> adds them up. Repeated letters (the two Es in AEEINRT) are counted once, which is what the <code>set(combinations(...))</code> is for.</p>
+  <p class="note">Blank mode 0 does not pretend blanks don't exist. They are still in the 100-tile bag, so the "1 in N" odds above use C(100, 7). The mode only picks which racks count.</p>
+</section>
+
+<!-- 2 -->
+<section class="stage" id="s-lex">
+  <div class="head"><h2>Group words by alphagram</h2><span class="file">lexicon.py</span></div>
+  <p>An <em>alphagram</em> is a word's letters in alphabetical order. Every anagram of a rack shares one, so a dictionary grouped by alphagram gives you the answer to "what can I make from these tiles?". Pick a word to see its siblings.</p>
+  <div class="demo">
+    <div class="row" id="lexPick"></div>
+    <div id="lexBody" style="margin-top:1rem"></div>
+  </div>
+  <p>The same module answers the hook question without a separate table. A <em>back hook</em> is a letter that makes another valid word when added after: <code>back_hooks("STAINER")</code> tries A to Z against the dictionary and finds <span class="mono">S</span>. The loader reads one word per line, with an optional definition after a tab or space, and new formats plug in through <code>LOADERS</code>.</p>
+</section>
+
+<!-- 3 -->
+<section class="stage" id="s-rank">
+  <div class="head"><h2>Rank, then filter</h2><span class="file">ranking.py</span></div>
+  <p>Every alphagram is scored, sorted by descending draw count with ties broken alphabetically, and numbered from 1. Filters run afterwards and only hide cards, so a card keeps its rank whatever you select. Switch the blank mode to watch the order change, or filter to single anagrams to watch the ranks stay put.</p>
+  <div class="demo">
+    <div class="row" style="margin-bottom:1rem">
+      <span class="eyebrow">Blanks</span>
+      <div class="seg" id="rankMode" role="group" aria-label="Blank mode">
+        <button aria-pressed="true" data-m="0">0 blanks</button><button aria-pressed="false" data-m="any">any</button>
+      </div>
+      <button class="btn" id="singleBtn" aria-pressed="false">Single anagram only</button>
+    </div>
+    <div class="ranks" id="ranks"></div>
+    <p class="note" style="margin:0.9rem 0 0">Eleven sample alphagrams. Bars are on a log scale: ZOOLOGY has 1,344 draws, AEINORT millions.</p>
+  </div>
+  <p>Racks the bag cannot supply are dropped. A second style, <code>--front rack</code>, lists the racks themselves (letters held plus a <span class="mono">?</span> per blank) instead of alphagrams.</p>
+</section>
+
+<!-- 4 -->
+<section class="stage" id="s-cards">
+  <div class="head"><h2>Turn a rack into an Anki card</h2><span class="file">export/</span></div>
+  <p>Racks with a few anagrams become <strong>Basic</strong> notes. Racks with many become <strong>Cloze</strong> notes, with each anagram hidden behind a deletion. Drag the cut-off, and tap a deletion to reveal it.</p>
+  <div class="demo">
+    <div class="row" style="margin-bottom:1rem">
+      <label class="eyebrow" for="thr">Cloze cut-off</label>
+      <input type="range" id="thr" min="1" max="6" value="4">
+      <span class="out" id="thrOut"></span>
+      <span class="eyebrow" style="margin-left:0.6rem">Cloze mode</span>
+      <div class="seg" id="clMode" role="group" aria-label="Cloze mode">
+        <button aria-pressed="true" data-m="each">each</button><button aria-pressed="false" data-m="all">all</button>
+      </div>
+    </div>
+    <div class="cardprev" id="cardPrev"></div>
+    <p class="note" id="cardNote" style="margin:0.9rem 0 0"></p>
+  </div>
+  <p>The first field is always the alphagram. Anki treats it as the note's identity, so importing again updates cards instead of duplicating them. <code>tsv.py</code> writes tab-separated files with Anki's header lines, and <code>apkg.py</code> builds a package with genanki, using IDs derived from a CRC of the names so repeated exports line up.</p>
+</section>
+
+<!-- 5 -->
+<section class="stage" id="s-defs">
+  <div class="head"><h2>Fill in missing definitions</h2><span class="file">definitions.py</span></div>
+  <p><code>--fetch-definitions</code> only looks up the words in the cards being exported. It asks dictionaryapi.dev, falls back to Wiktionary, and writes what it finds back into your word list. The web services are not Collins and they push back, so the loop is built to cope. Run a simulated 40-word lookup.</p>
+  <div class="demo">
+    <div class="row">
+      <button class="btn primary" id="simRun">Run lookup</button>
+      <label class="row" style="gap:0.4rem"><input type="checkbox" id="simStuck"> Service stays rate limited</label>
+    </div>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+    <div class="legend">
+      <span style="--c:var(--ok)">definition found</span>
+      <span style="--c:var(--tile)">not found (saved to .nodef)</span>
+      <span style="--c:var(--red)">service error, skipped</span>
+      <span style="--c:var(--red-soft)">backing off</span>
+    </div>
+    <div class="log" id="simLog" role="log" aria-live="polite" style="margin-top:0.8rem"></div>
+  </div>
+  <p>A rate limit makes <code>_fetch_with_backoff</code> wait 20 seconds, doubling each time, up to five retries on the same word. A 5xx error skips the word without remembering it, so the next run tries again; five in a row stops the run. Progress is written in a <code>finally</code> block, and the dictionary is replaced through a temporary file so an interruption can't leave it half written. The simulation runs about 40 times faster than real waits.</p>
+</section>
+
+<!-- map -->
+<section class="stage" id="s-map">
+  <div class="head"><h2>Code map</h2></div>
+  <p>The README and <code>docs/walkthrough.md</code> cover the same ground in prose. Open a module for its key lines.</p>
+  <div class="mods" id="mods"></div>
+</section>
+
+<footer>
+  rackrank is MIT licensed. The word list and its definitions are not part of the repository. The sample words on this page are common English words used only to illustrate the maths.
+</footer>
+</div>
+
+<script>
+"use strict";
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const BAG = {A:9,B:2,C:2,D:4,E:12,F:2,G:3,H:2,I:9,J:1,K:1,L:4,M:2,N:6,O:8,P:2,Q:1,R:6,S:4,T:6,U:4,V:2,W:2,X:1,Y:2,Z:1,"?":2};
+const PTS = {A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10,"?":0};
+const TOTAL = 16007560800; // C(100, 7)
+const $ = (s, r = document) => r.querySelector(s);
+const fmt = n => n.toLocaleString("en-GB");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const alphagram = w => [...w].sort().join("");
+
+function comb(n, k) {
+  if (k < 0 || k > n) return 0;
+  let r = 1;
+  for (let i = 1; i <= k; i++) r = r * (n - k + i) / i;
+  return Math.round(r);
+}
+function counts(s) { const m = {}; for (const c of s) m[c] = (m[c] || 0) + 1; return m; }
+function drawCount(letters, blanks = 0) {
+  let t = comb(BAG["?"], blanks);
+  for (const [l, n] of Object.entries(counts(letters))) t *= comb(BAG[l] || 0, n);
+  return t;
+}
+// distinct choices of k letters that blanks could stand for
+function blankChoices(alpha, k) {
+  const seen = new Map();
+  const idx = [];
+  (function pick(start) {
+    if (idx.length === k) {
+      const chosen = idx.map(i => alpha[i]).join("");
+      if (!seen.has(chosen)) {
+        const rest = [...alpha].filter((_, i) => !idx.includes(i)).join("");
+        seen.set(chosen, { chosen, rest, draws: drawCount(rest, k) });
+      }
+      return;
+    }
+    for (let i = start; i < alpha.length; i++) { idx.push(i); pick(i + 1); idx.pop(); }
+  })(0);
+  return [...seen.values()];
+}
+function alphagramDraws(alpha, k) {
+  return k === 0 ? drawCount(alpha) : blankChoices(alpha, k).reduce((s, c) => s + c.draws, 0);
+}
+function tileHTML(ch, cls = "") {
+  return `<div class="tile ${cls}${ch === "?" ? " blank" : ""}">${esc(ch)}<sub>${PTS[ch] ?? ""}</sub></div>`;
+}
+
+/* FLIP: reorder existing nodes, then animate each from its old position. */
+function flip(container, mutate) {
+  const kids = [...container.children];
+  const first = new Map(kids.map(k => [k, k.getBoundingClientRect()]));
+  mutate();
+  if (reduce) return;
+  for (const k of container.children) {
+    const a = first.get(k);
+    if (!a) continue;
+    const b = k.getBoundingClientRect();
+    const dx = a.left - b.left, dy = a.top - b.top;
+    if (dx || dy) k.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: 480, easing: "cubic-bezier(.2,.8,.2,1)" });
+  }
+}
+
+/* ---------- sample lexicon ---------- */
+const WORDS = {
+  RETAINS: ["keeps hold of", ""], RETSINA: ["a Greek wine flavoured with pine resin", "s"],
+  STAINER: ["one who stains", "s"], STEARIN: ["the solid part of a fat", "es"], NASTIER: ["comparative of nasty", ""],
+};
+const SAMPLE = [
+  ["AEINRST", ["RETAINS", "RETSINA", "STAINER", "STEARIN", "NASTIER"]],
+  ["AEINORT", ["NOTAIRE", "OTARINE"]],
+  ["AEEIORT", ["ETAERIO"]],
+  ["ADEINOR", ["ANEROID"]],
+  ["AEILNOR", ["AILERON", "ALERION", "ALIENOR"]],
+  ["AEGINRT", ["GRANITE", "INGRATE", "TANGIER", "TEARING", "GRATINE"]],
+  ["AENORST", ["SENATOR", "TREASON", "ATONERS"]],
+  ["EINORTU", ["ROUTINE"]],
+  ["ADEINRT", ["TRAINED", "DETRAIN"]],
+  ["ABDNOSU", ["ABOUNDS"]],
+  [alphagram("ZOOLOGY"), ["ZOOLOGY"]],
+];
+
+/* ---------- hero ---------- */
+(function hero() {
+  const rack = $("#heroRack"), words = $("#heroWords"), out = $("#heroOut");
+  const list = Object.keys(WORDS);
+  let word = list[0], tiles = [];
+  function build(w) {
+    word = w;
+    rack.innerHTML = "";
+    tiles = [...w].map((ch, i) => { const d = document.createElement("div"); d.innerHTML = tileHTML(ch); const t = d.firstChild; t.dataset.ch = ch; rack.appendChild(t); return t; });
+    out.textContent = "";
+    words.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.w === w)));
+  }
+  words.innerHTML = list.map(w => `<button class="btn" data-w="${w}" aria-pressed="false">${w}</button>`).join("");
+  words.addEventListener("click", e => { const b = e.target.closest("button"); if (b) build(b.dataset.w); });
+  $("#shuffleBtn").onclick = () => {
+    const order = [...tiles].sort(() => Math.random() - 0.5);
+    flip(rack, () => order.forEach(t => rack.appendChild(t)));
+    out.textContent = "";
+  };
+  $("#sortBtn").onclick = () => {
+    const order = [...tiles].sort((a, b) => a.dataset.ch.localeCompare(b.dataset.ch));
+    flip(rack, () => order.forEach(t => rack.appendChild(t)));
+    const ag = alphagram(word), sibs = list.filter(w => alphagram(w) === ag);
+    out.textContent = `${ag} · ${sibs.length} anagrams: ${sibs.join(", ")}`;
+  };
+  build(word);
+})();
+
+/* ---------- 1: draw-count calculator ---------- */
+(function calc() {
+  const input = $("#calcIn"), body = $("#calcBody"), seg = $("#calcBlanks");
+  let k = 0, alpha = "AEINRST";
+  function render() {
+    let html = "";
+    const racks = [...alpha].map(c => tileHTML(c, "sm")).join("");
+    html += `<div class="row" style="margin-top:1rem;gap:3px">${racks}</div>`;
+    if (k === 0) {
+      const cs = counts(alpha);
+      const groups = Object.entries(cs).sort();
+      const vals = groups.map(([l, n]) => comb(BAG[l], n));
+      const total = vals.reduce((a, b) => a * b, 1);
+      html += `<div class="factors">` + groups.map(([l, n], i) =>
+        `<div class="factor"><b>${l}${n > 1 ? "×" + n : ""}</b> C(${BAG[l]}, ${n}) <span class="eq">= ${fmt(vals[i])}</span></div>` +
+        (i < groups.length - 1 ? `<span class="times">×</span>` : "")).join("") + `</div>`;
+      html += result(total);
+    } else {
+      const rows = blankChoices(alpha, k).sort((a, b) => b.draws - a.draws);
+      const total = rows.reduce((s, r) => s + r.draws, 0);
+      html += `<p class="note" style="margin-top:1rem">${rows.length} distinct choice${rows.length === 1 ? "" : "s"} of what the blank${k > 1 ? "s" : ""} could be. Each one multiplies the leftover tiles' draws by C(2, ${k}) = ${comb(2, k)} for the blank${k > 1 ? "s" : ""} in the bag.</p>`;
+      html += `<div class="scroll-x" style="max-height:15rem;overflow-y:auto"><table><thead><tr><th>Blank${k > 1 ? "s" : ""} stand for</th><th>Concrete tiles</th><th class="num">Draws</th></tr></thead><tbody>` +
+        rows.map(r => `<tr><td class="mono">${r.chosen.split("").join(" + ")}</td><td class="mono">${r.rest} + ${"?".repeat(k)}</td><td class="num">${fmt(r.draws)}</td></tr>`).join("") +
+        `<tr class="total"><td colspan="2">Sum (disjoint racks)</td><td class="num">${fmt(total)}</td></tr></tbody></table></div>`;
+      html += result(total);
+    }
+    body.innerHTML = html;
+    const big = $("#calcBig");
+    if (big && !reduce) countUp(big, +big.dataset.v);
+  }
+  function result(total) {
+    if (!total) return `<p style="margin-top:1rem"><strong>The bag can't make this rack.</strong> It needs more of some letter than the set contains.</p>`;
+    const share = Math.min(100, Math.max(0.6, Math.log10(total) / Math.log10(TOTAL) * 100));
+    return `<div style="margin-top:1.1rem"><span class="eyebrow">Draw count</span><div class="big" id="calcBig" data-v="${total}">${fmt(total)}</div>
+      <p class="out muted" style="margin:0.4rem 0 0.7rem">1 in ${fmt(Math.round(TOTAL / total))} <span style="font-size:.8em">(of ${fmt(TOTAL)} racks)</span></p>
+      <div class="bar" title="log scale"><i style="width:${share}%"></i></div></div>`;
+  }
+  function countUp(el, to) {
+    const t0 = performance.now();
+    (function step(t) {
+      const p = Math.min(1, (t - t0) / 450);
+      el.textContent = fmt(Math.round(to * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+  input.addEventListener("input", () => {
+    const v = input.value.toUpperCase().replace(/[^A-Z]/g, "");
+    input.value = v;
+    if (v.length === 7) { alpha = alphagram(v); render(); }
+  });
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    k = +b.dataset.k;
+    seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    render();
+  });
+  render();
+})();
+
+/* ---------- 2: lexicon ---------- */
+(function lex() {
+  const pick = $("#lexPick"), body = $("#lexBody");
+  const picks = ["RETAINS", "SENATOR", "GRANITE", "TRAINED"];
+  const groups = Object.fromEntries(SAMPLE.map(([a, w]) => [a, w]));
+  pick.innerHTML = picks.map(w => `<button class="btn" data-w="${w}" aria-pressed="false">${w}</button>`).join("");
+  function show(w) {
+    const ag = alphagram(w);
+    pick.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.w === w)));
+    body.innerHTML = `<div class="row" style="gap:1rem"><span class="mono">${w}</span><span class="muted">sorts to</span><div class="row" style="gap:3px">${[...ag].map(c => tileHTML(c, "sm")).join("")}</div></div>
+      <p style="margin:0.9rem 0 0.3rem" class="eyebrow">dict[alphagram] →</p><div class="row">${groups[ag].map(x => `<span class="tag basic">${x}</span>`).join("")}</div>`;
+  }
+  pick.addEventListener("click", e => { const b = e.target.closest("button"); if (b) show(b.dataset.w); });
+  show("RETAINS");
+})();
+
+/* ---------- 3: ranking ---------- */
+(function ranking() {
+  const host = $("#ranks"), seg = $("#rankMode"), single = $("#singleBtn");
+  let mode = "0", only = false;
+  const maxLog = Math.log10(6e6);
+  const rows = SAMPLE.map(([ag, ws]) => {
+    const el = document.createElement("div");
+    el.className = "rrow";
+    el.innerHTML = `<div class="rk"></div><div><div class="ag">${[...ag].map(c => tileHTML(c)).join("")}</div></div>
+      <div><div class="bar"><i></i></div><div class="words">${ws.join(" ")}</div></div><div class="dr"></div>`;
+    host.appendChild(el);
+    return { ag, ws, el, d0: alphagramDraws(ag, 0), dAny: alphagramDraws(ag, 0) + alphagramDraws(ag, 1) + alphagramDraws(ag, 2) };
+  });
+  function update(animate) {
+    const draws = r => mode === "0" ? r.d0 : r.dAny;
+    const sorted = [...rows].sort((a, b) => draws(b) - draws(a) || a.ag.localeCompare(b.ag));
+    const apply = () => sorted.forEach((r, i) => {
+      host.appendChild(r.el);
+      r.el.querySelector(".rk").textContent = i + 1;
+      r.el.querySelector(".dr").textContent = fmt(draws(r));
+      r.el.querySelector(".bar i").style.width = Math.max(3, Math.log10(draws(r)) / maxLog * 100) + "%";
+      r.el.classList.toggle("out-of-filter", only && r.ws.length > 1);
+    });
+    animate ? flip(host, apply) : apply();
+  }
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    mode = b.dataset.m;
+    seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    update(true);
+  });
+  single.addEventListener("click", () => { only = !only; single.setAttribute("aria-pressed", String(only)); update(false); });
+  update(false);
+})();
+
+/* ---------- 4: card preview ---------- */
+(function cards() {
+  const host = $("#cardPrev"), thr = $("#thr"), thrOut = $("#thrOut"), seg = $("#clMode"), note = $("#cardNote");
+  const words = SAMPLE[0][1].slice().sort();
+  let mode = "each";
+  function render() {
+    const t = +thr.value, isCloze = words.length > t;
+    thrOut.textContent = `${t} → ${words.length} anagrams make a ${isCloze ? "Cloze" : "Basic"} note`;
+    seg.style.display = isCloze ? "" : "none";
+    let h = `<div class="front">AEINRST <small>(${words.length})</small></div><div style="margin:0.6rem 0 0.8rem"><span class="tag ${isCloze ? "cl" : "basic"}">${isCloze ? "Cloze" : "Basic"}</span> <span class="tag">csw24::7::b0::0001-0500</span></div>`;
+    words.forEach((w, i) => {
+      const [def, back] = WORDS[w];
+      const inner = `<span class="w">${w}</span> ${back ? `<span class="hook">-${back}</span>` : ""} <span class="def">${def}</span>`;
+      if (isCloze) {
+        const n = mode === "each" ? i + 1 : 1;
+        h += `<div class="ana"><button class="cloze" data-i="${i}" aria-label="Reveal anagram ${i + 1}">[… c${n}]</button><span class="inner" hidden>${inner}</span></div>`;
+      } else {
+        h += `<div class="ana">${inner}</div>`;
+      }
+    });
+    host.innerHTML = h;
+    note.innerHTML = isCloze
+      ? `Anki field: <code>{{c${mode === "each" ? "1…" + words.length : "1"}::…}}</code>. Mode <b>${mode}</b> gives <b>${mode === "each" ? words.length + " cards" : "1 card"}</b> for this rack.`
+      : `A Basic note gives <b>1 card</b>: the letters on the front, every anagram on the back.`;
+  }
+  host.addEventListener("click", e => {
+    const b = e.target.closest(".cloze"); if (!b) return;
+    const row = b.closest(".ana");
+    row.innerHTML = row.querySelector(".inner").innerHTML;
+  });
+  thr.addEventListener("input", render);
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    mode = b.dataset.m;
+    seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    render();
+  });
+  render();
+})();
+
+/* ---------- 5: lookup simulation ---------- */
+(function sim() {
+  const dots = $("#dots"), log = $("#simLog"), run = $("#simRun"), stuck = $("#simStuck");
+  const N = 40;
+  let running = false, token = 0;
+  function reset() {
+    dots.innerHTML = Array.from({ length: N }, () => '<div class="dot"></div>').join("");
+    log.textContent = "";
+  }
+  const say = (m) => { log.textContent += m + "\n"; log.scrollTop = log.scrollHeight; };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  run.onclick = async () => {
+    if (running) return;
+    running = true; run.disabled = true; reset();
+    const my = ++token, tick = 60, speed = 40;
+    let found = 0, missed = 0, skipped = 0, rate = false, stop = false;
+    const d = i => dots.children[i];
+    for (let i = 0; i < N && !stop; i++) {
+      d(i).className = "dot cur";
+      await sleep(tick);
+      if (i === 12) { d(i).className = "dot skip"; skipped++; say(`word ${i + 1}: HTTP 502, skipped (not remembered)`); continue; }
+      if (i === 27 && !rate || (stuck.checked && i >= 27)) {
+        rate = true;
+        let wait = 20, attempt = 0, ok = false;
+        while (attempt < 5) {
+          d(i).className = "dot wait";
+          say(`word ${i + 1}: rate limited, waiting ${wait}s`);
+          await sleep(wait * 1000 / speed);
+          attempt++;
+          if (!stuck.checked && attempt >= 2) { ok = true; break; }
+          wait *= 2;
+        }
+        if (!ok) { say(`still rate limited after 5 retries: stopping. Progress is saved; run again later.`); stop = true; continue; }
+        say(`word ${i + 1}: retry succeeded`);
+      }
+      if (i % 7 === 3) { d(i).className = "dot miss"; missed++; }
+      else { d(i).className = "dot found"; found++; }
+    }
+    say(`done: ${found} found, ${missed} not found, ${skipped} skipped, ${N - found - missed - skipped} not reached`);
+    running = false; run.disabled = false;
+  };
+  reset();
+})();
+
+/* ---------- code map ---------- */
+(function map() {
+  const mods = [
+    ["probability.py", "Draw-count maths", `total = comb(tiles.get(BLANK, 0), blanks)
+for letter, needed in Counter(letters).items():
+    total *= comb(tiles.get(letter, 0), needed)`],
+    ["lexicon.py", "Word list, alphagrams, hooks", `def back_hooks(self, word):
+    return "".join(
+        c for c in ascii_lowercase if word + c.upper() in self.definitions
+    )`],
+    ["ranking.py", "Score, rank, filter", `for letters, words in groups.items():
+    draws = sum(alphagram_draw_count(letters, tiles, k) for k in spec.blanks)
+    if draws:
+        scored.append((letters, draws, words))
+return _rank(scored, lexicon)`],
+    ["config.py", "TOML config and tile set", `config.dictionary_path = (path.parent / dictionary["path"]).resolve()`],
+    ["cli.py", "list and export commands", `rackrank export --rank 1-50 --cloze-mode all --format apkg --fetch-definitions`],
+    ["export/", "Basic and cloze notes, TSV and .apkg", `lines.append("{{c%d::%s}}" % (index, render_entry(entry)))`],
+    ["definitions.py", "Lookup, backoff, write-back", `wait = backoff
+for attempt in range(RETRIES + 1):
+    try:
+        return fetch(word)
+    except RateLimited:
+        if attempt == RETRIES: raise
+        time.sleep(wait); wait *= 2`],
+  ];
+  $("#mods").innerHTML = mods.map(([f, r, code]) =>
+    `<details class="mod"><summary><span class="f">${esc(f)}</span><span>${esc(r)}</span></summary><div class="body"><pre>${esc(code)}</pre></div></details>`).join("");
+})();
+</script>
+</body>
+</html>
