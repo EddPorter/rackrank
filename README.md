@@ -139,6 +139,9 @@ note types, so lists with different rankings do not overwrite one another.
 The `.apkg` uses a GUID derived from the note type and alphagram for the same
 reason.
 
+For a guided tour of how the code fits together, see
+[docs/walkthrough.md](docs/walkthrough.md).
+
 ## Layout
 
 ```
