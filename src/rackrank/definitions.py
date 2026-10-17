@@ -24,7 +24,9 @@ from .lexicon import Lexicon
 
 API = "https://api.dictionaryapi.dev/api/v2/entries/en/"
 WIKTIONARY = "https://en.wiktionary.org/api/rest_v1/page/definition/"
-DELAY = 0.7  # seconds between requests; the service allows about 450 per 5 minutes
+DELAY = 0.7  # seconds between requests
+BACKOFF = 20.0  # first wait after a rate limit; doubles on each further attempt
+RETRIES = 5  # rate-limit retries for one word before giving up
 
 
 class RateLimited(Exception):
@@ -106,12 +108,30 @@ def _store(path: Path, found: dict[str, str], misses: set[str]) -> None:
         _write_atomic(misses_path(path), "\n".join(sorted(misses)) + "\n")
 
 
+def _fetch_with_backoff(
+    fetch: Callable[[str], str | None], word: str, backoff: float
+) -> str | None:
+    """Call ``fetch``, waiting and retrying (doubling the wait) when rate limited."""
+    wait = backoff
+    for attempt in range(RETRIES + 1):
+        try:
+            return fetch(word)
+        except RateLimited:
+            if attempt == RETRIES:
+                raise
+            print(f"Rate limited; waiting {wait:g}s before retrying {word}...", file=sys.stderr)
+            time.sleep(wait)
+            wait *= 2
+    raise AssertionError("unreachable")
+
+
 def fill_definitions(
     lexicon: Lexicon,
     words: Iterable[str],
     path: Path,
     fetch: Callable[[str], str | None] = fetch_definition,
     delay: float = DELAY,
+    backoff: float = BACKOFF,
 ) -> int:
     """Fetch definitions for ``words`` that lack one; returns how many were found.
 
@@ -131,9 +151,9 @@ def fill_definitions(
             if index:
                 time.sleep(delay)
             try:
-                definition = fetch(word)
+                definition = _fetch_with_backoff(fetch, word, backoff)
             except RateLimited:
-                print("Rate limited; stopping. Run again later to continue.", file=sys.stderr)
+                print("Still rate limited; stopping. Run again later to continue.", file=sys.stderr)
                 break
             except (urllib.error.URLError, TimeoutError) as error:
                 failed += 1

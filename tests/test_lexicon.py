@@ -62,3 +62,24 @@ def test_fill_definitions_caches_found_and_missing_words(tmp_path):
 
     fill_definitions(load_wordlist(path, "T"), ["CAT", "ZZZ"], path, fetch, delay=0)
     assert calls == ["CAT", "ZZZ"]  # nothing is requested a second time
+
+
+def test_fill_definitions_backs_off_and_retries_when_rate_limited(tmp_path):
+    from rackrank.definitions import RateLimited, fill_definitions
+    from rackrank.lexicon import load_wordlist
+
+    path = tmp_path / "dict.txt"
+    path.write_text("CAT\nDOG\n")
+    lexicon = load_wordlist(path, "T")
+    calls = []
+
+    def fetch(word):
+        calls.append(word)
+        if len(calls) in (2, 3):  # rate limited twice on the second request
+            raise RateLimited
+        return "def " + word
+
+    found = fill_definitions(lexicon, ["CAT", "DOG"], path, fetch, delay=0, backoff=0)
+    assert found == 2
+    assert calls == ["CAT", "DOG", "DOG", "DOG"]
+    assert path.read_text() == "CAT\tdef CAT\nDOG\tdef DOG\n"
